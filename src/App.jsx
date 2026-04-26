@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 
+if (!document.getElementById('cs-styles')) {
 const style = document.createElement("style");
+style.id = 'cs-styles';
 style.textContent = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Josefin+Sans:wght@300;400;600&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
 
@@ -707,60 +709,53 @@ style.textContent = `
   }
 `;
 document.head.appendChild(style);
+}
 
 // ─── ICONS ───
-const icons = {
-  Studio: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
-  Pipeline: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>,
-  Calendar: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>,
-  Brand: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>,
-  Image: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>,
-  Copy: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>,
-  Download: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
-  Refresh: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>,
-};
+function IconStudio() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>; }
+function IconPipeline() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>; }
+function IconCalendar() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>; }
+function IconBrand() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>; }
+function IconImage() { return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>; }
+function IconCopy() { return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>; }
+function IconDownload() { return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>; }
+function IconRefresh() { return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>; }
 
 // ─── GROQ API CALL (FREE & FAST) ───
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 
 async function callLLM(systemPrompt, userPrompt) {
-  try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",  // Fast, free, high-quality
-        max_tokens: 2000,
-        temperature: 0.7,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-      }),
-    });
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "llama-3.1-8b-instant", // Fast, free — replacement for deprecated llama3-8b-8192
+      max_tokens: 1200,
+      temperature: 0.6,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+    }),
+  });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error("Groq API Error:", errorData);
-      throw new Error(`API request failed: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
-    
-    if (!content || !content.trim()) {
-      throw new Error("Empty response from API");
-    }
-    
-    return content;
-  } catch (error) {
-    console.error("Groq API Error:", error);
-    // Return a helpful error message instead of failing silently
-    return `[AI Generation Error] ${error.message}. Please check your internet connection and try again.\n\nRequested prompt: ${userPrompt.substring(0, 200)}...`;
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const msg = errorData?.error?.message || `HTTP ${response.status}`;
+    throw new Error(msg);
   }
+
+  const data = await response.json();
+  const content = data.choices?.[0]?.message?.content;
+
+  if (!content || !content.trim()) {
+    throw new Error("Empty response from API");
+  }
+
+  return content;
 }
 
 // ─── STUDIO VIEW ───
@@ -803,10 +798,20 @@ function StudioView() {
     }
     
     try {
+      const targetWords = Math.min(wordCount, 800); // cap to avoid looping
       const [blog, social, email] = await Promise.all([
-        callLLM('You are an expert content writer. Write a blog post. Be concise and professional. Include a title at the beginning.', `Write a ${wordCount}-word blog post about "${topic}" for ${audience}. Use clear paragraphs and an engaging tone.`),
-        callLLM('You are a social media expert. Respond ONLY with JSON, no markdown, no extra text.', `Create 3 platform-specific social captions about "${topic}" for ${audience}. Return ONLY valid JSON in this exact format: {"captions":[{"platform":"LinkedIn","text":"caption here"},{"platform":"Instagram","text":"caption here"},{"platform":"Twitter/X","text":"caption here"}]}`),
-        callLLM('You are an email newsletter writer. Be engaging and direct.', `Write a newsletter snippet about "${topic}" for ${audience}. Start with a subject line in brackets like [Subject: ...], then write the email body. Keep it under 250 words.`),
+        callLLM(
+          'You are a professional content writer. Write clear, engaging blog posts with a title, introduction, 2-3 body sections, and a conclusion. Do not repeat sentences.',
+          `Write a ${targetWords}-word blog post titled about "${topic}" aimed at ${audience}. Write naturally and stop when done.`
+        ),
+        callLLM(
+          'You are a social media strategist. Output only raw JSON with no markdown or extra text.',
+          `Write 3 short social media captions about "${topic}" for ${audience}. Each caption must be unique and platform-specific. Return this exact JSON structure:\n{"captions":[{"platform":"LinkedIn","text":"<linkedin post>"},{"platform":"Instagram","text":"<instagram post>"},{"platform":"Twitter/X","text":"<tweet>"}]}`
+        ),
+        callLLM(
+          'You are a concise email newsletter writer. Write engaging, human emails under 220 words.',
+          `Write an email newsletter snippet about "${topic}" for ${audience}. Begin with [Subject: your subject line here], then write the email body. Be direct and stop after the sign-off.`
+        ),
       ]);
       
       let socialParsed;
@@ -1489,15 +1494,15 @@ Return this exact JSON structure:
             {result && (
               <div className="caption-actions">
                 <button className="btn-sm-teal" onClick={() => copyCaption(currentCaption)}>
-                  <icons.Copy /> {copied === captionPlatform ? ' Copied!' : ' Copy Caption'}
+                  <IconCopy /> {copied === captionPlatform ? ' Copied!' : ' Copy Caption'}
                 </button>
                 {imageUrl && (
                   <button className="btn-sm-teal" onClick={downloadImage}>
-                    <icons.Download /> Download PNG
+                    <IconDownload /> Download PNG
                   </button>
                 )}
                 <button className="btn-sm-teal" onClick={generatePost}>
-                  <icons.Refresh /> Regenerate
+                  <IconRefresh /> Regenerate
                 </button>
                 <button className="btn-sm-teal" onClick={() => {
                   const all = PLATFORMS_IMG.map(p => `=== ${p.label} ===\n${result.captions[p.id]}`).join('\n\n');
@@ -1684,11 +1689,11 @@ export default function App() {
   const [draftCount, setDraftCount] = useState(3);
 
   const navItems = [
-    { id: 'studio', label: 'Studio', num: '01', icon: <icons.Studio /> },
-    { id: 'image', label: 'Image Studio', num: '02', icon: <icons.Image />, teal: true },
-    { id: 'pipeline', label: 'Pipeline', num: '03', icon: <icons.Pipeline /> },
-    { id: 'calendar', label: 'Calendar', num: '04', icon: <icons.Calendar /> },
-    { id: 'brand', label: 'Brand Voice', num: '05', icon: <icons.Brand /> },
+    { id: 'studio', label: 'Studio', num: '01', icon: <IconStudio /> },
+    { id: 'image', label: 'Image Studio', num: '02', icon: <IconImage />, teal: true },
+    { id: 'pipeline', label: 'Pipeline', num: '03', icon: <IconPipeline /> },
+    { id: 'calendar', label: 'Calendar', num: '04', icon: <IconCalendar /> },
+    { id: 'brand', label: 'Brand Voice', num: '05', icon: <IconBrand /> },
   ];
 
   return (
